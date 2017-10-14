@@ -12,9 +12,11 @@
 #include <spi4teensy3.h>
 #endif
 #include <SPI.h>
-#include <SoftReset.h>
+#include<Servo.h> 
 
+#define DEBUGOUT
 
+// Controller BT address
 uint8_t bta[6] = {0xE8,0x70,0x03,0x15,0x07,0x16};
 
 USB Usb;
@@ -33,6 +35,10 @@ int up = 20;
 int down = 20;
 int max = 2000;
 int min = 800;
+Servo esc; 
+int PIN_ESC = 7;
+int PIN_PIEZO = 6;
+
 
 boolean ready = false;
 
@@ -44,13 +50,14 @@ unsigned long elapsedTime;
 
 
 
-// After that you can simply create the instance like so and then press the PS button on the device
-//PS4BT PS4(&Btd);
 
 bool printAngle, printTouch;
 uint8_t oldL2Value, oldR2Value;
 
-void setup() {
+void setup()
+{
+  
+  esc.attach(PIN_ESC); 
   Serial.begin(115200);
 
 #if !defined(__MIPSEL__)
@@ -62,6 +69,12 @@ void setup() {
     while (1); // Halt
   }
   Serial.print(F("\r\nPS4 Bluetooth Library Started\r\n"));
+
+  esc.writeMicroseconds(800);
+  delay(5000);   
+
+  tone(PIN_PIEZO, 1000, 1500);
+  delay(1500);
 
   previousTime = millis();
   
@@ -82,74 +95,115 @@ void loop()
         if (ready==false)
         {  
           ready = true;
+#ifdef DEBUGOUT          
           Serial.println("after reboot - BEEEP!");
           Serial.print("Speed:");
           Serial.println(speed);
+#endif          
+          tone(PIN_PIEZO, 1000, 500);
+          delay(1000);
+          tone(PIN_PIEZO, 1000, 500);
+          delay(1000);
+          tone(PIN_PIEZO, 1000, 500);
+          delay(1000);
+          
         }
         else
         {
-          /*Serial.println("after reboot - BEEEP!");
-          Serial.print("Speed:");
-          Serial.println(speed);*/
+          // not used
         }
         break;
       case 0:    // nothing
+#ifdef DEBUGOUT          
         Serial.println("nothing (speed slowly decrease)");
+#endif          
         if (speed>min)
           speed-=25;
+#ifdef DEBUGOUT          
         Serial.print("Speed:");
         Serial.println(speed);
+#endif          
         break;
       case 80:    // up
-        Serial.println("up (speed increase)");
+        //Serial.println("up (speed increase)");
         if (speed<max)
-          speed+=100;
+          speed+=25;
+#ifdef DEBUGOUT          
         Serial.print("Speed:");
         Serial.println(speed);
+#endif          
         break;
       case 79:    // down
-        Serial.println("down (spped downcrease)");
+        //Serial.println("down (spped downcrease)");
         if (speed>min)
-          speed-=100;
+          speed-=50;
+#ifdef DEBUGOUT          
         Serial.print("Speed:");
         Serial.println(speed);
+#endif          
         break;
       case 82:    // right
+#ifdef DEBUGOUT          
         Serial.println("right");
+#endif          
         break;
       case 81:    // left
-        Serial.println("left (hold speed)");
+        //Serial.println("left (hold speed)");
+#ifdef DEBUGOUT          
         Serial.print("Speed:");
         Serial.println(speed);
+#endif          
         break;
       case 34:    // select
+#ifdef DEBUGOUT          
         Serial.println("select");
+#endif          
         break;
       case 39:    // start
+#ifdef DEBUGOUT          
         Serial.println("start");
+#endif          
         break;
       case 32:    // X
+#ifdef DEBUGOUT          
         Serial.println("X");
+#endif          
         break;
       case 30:    // A
+#ifdef DEBUGOUT          
         Serial.println("A");
+#endif          
         break;
       case 33:    // Y
+#ifdef DEBUGOUT          
         Serial.println("Y");
+#endif          
         break;
       case 31:    // B
+#ifdef DEBUGOUT          
         Serial.println("B");
-        // soft_restart();
+#endif          
         break;
       }
+      
+      // check ranges
+      if (speed > max)
+        speed = max;
+      if (speed < min)
+        speed = min; 
 
-  /*    Serial.print(previousTime);
+      delay(10);  
+      esc.writeMicroseconds(speed);
+      delay(10);
+      /*  
+      Serial.print(previousTime);
       Serial.print(",");
       Serial.print(elapsedTime);
       Serial.print(":");
       Serial.print(" ControllerStatus: ");
       Serial.println(PS4.getAnalogHat(LeftHatX));
-    */
+      */
+      
       previousTime = millis();
       
       // check ranges
@@ -157,13 +211,23 @@ void loop()
         speed = max;
       if (speed < min)
         speed = min;  
-
-      
-
-
-
-      
     }
+    if (Btd.connected==false) // lost buetooth connection?
+    {
+#ifdef DEBUGOUT          
+        Serial.println("Connection lost - decrease speed until halt");
+#endif          
+
+       if (speed>min)
+          speed-=50;  
+      if (speed < min)
+        speed = min; 
+
+      delay(10);  
+      esc.writeMicroseconds(speed);
+      delay(10);   
+    }
+
   }
 }
 
