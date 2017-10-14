@@ -186,23 +186,8 @@ void loop()
         break;
       }
       
-      // check ranges
-      if (speed > max)
-        speed = max;
-      if (speed < min)
-        speed = min; 
-
-      delay(10);  
       esc.writeMicroseconds(speed);
       delay(10);
-      /*  
-      Serial.print(previousTime);
-      Serial.print(",");
-      Serial.print(elapsedTime);
-      Serial.print(":");
-      Serial.print(" ControllerStatus: ");
-      Serial.println(PS4.getAnalogHat(LeftHatX));
-      */
       
       previousTime = millis();
       
@@ -218,12 +203,11 @@ void loop()
         Serial.println("Connection lost - decrease speed until halt");
 #endif          
 
-       if (speed>min)
+      if (speed>min)
           speed-=50;  
       if (speed < min)
         speed = min; 
 
-      delay(10);  
       esc.writeMicroseconds(speed);
       delay(10);   
     }
